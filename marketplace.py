@@ -43,7 +43,7 @@ def general_informations(data, seller_informations, seller_items):
     return seller_informations
 
 def location_and_delivery_type(seller_informations):
-  """ Extract the location and the delivery type from each item sell profile and check if its already exists."""
+    """ Extract the location and the delivery type from each item sell profile and check if its already exists."""
     if seller_informations[0]["nbr_total_item"] != 0:
         i = 1
         locations = list()
