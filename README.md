@@ -1,4 +1,17 @@
-# SellerFB
+# About SellerFB
+
+SellerFB is an OSINT script who allows to find more informations about a Facebook profile. 
+
+SellerFB returns to you the Marketplace profile seller from a classical Facebook profile.
+
+He can returns the following informations : 
+-> SellerID of the profile
+-> Locations linked to the sellers (actual or sold)
+-> Public groups where the offers are postes
+-> Links of the first eight offers
+-> Number of actual sellers
+-> Ratings of the seller
+
 
 Show the marketplace profile from FB
 
