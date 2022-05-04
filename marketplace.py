@@ -2,7 +2,7 @@ import requests
 import json
 from localuseragent import ua
 import random
-
+import argparse
 
 def general_informations(data, seller_informations, seller_items, seller_groups):
     seller_informations.append({
@@ -110,10 +110,10 @@ def show_group(seller_groups):
         print(f"Name : {group['name']} && Group ID : {group['id']}")
 
 def main():
-
-    user_id = str(input("entrez userid : "))
-
-
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--id", help="Facebook UserID account", required=True)
+    args = parser.parse_args()
+    user_id = args.id
     headers = {
         'User-Agent': random.choice(ua["browsers"]["chrome"]),
         'Accept': '*/*',
