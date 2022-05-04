@@ -4,8 +4,7 @@ from localuseragent import ua
 import random
 
 
-def general_informations(data, seller_informations, seller_items):
-    """ Scrap the seller informations and the item selled inforamtions if exists."""
+def general_informations(data, seller_informations, seller_items, seller_groups):
     seller_informations.append({
         "nbr_total_item":data["data"]["user"]["marketplace_commerce_inventory"]["count"],
         "sellerid": data["data"]["user"]["marketplace_user_profile"]["id"],
@@ -15,46 +14,43 @@ def general_informations(data, seller_informations, seller_items):
         })
     if seller_informations[0]["nbr_total_item"] != None:
         first_items =  data["data"]["user"]["marketplace_commerce_inventory"]["edges"]
-        #print(seller_informations[0]["sellername"], seller_informations[0]["nbr_total_item"], seller_informations[0]["first_items"])
-
         for item in first_items:
-            seller_informations.append({
-                "seller_items":{
-                    "item_id": str(item["node"]["id"]),
-                    "price": item["node"]["listing_price"]["formatted_amount"],
-                    "status": str(item["node"]["is_pending"]),
-                    "islive": (item["node"]["is_live"]),
-                    "category": item["node"]["marketplace_listing_category_id"],
-                    "name": item["node"]["marketplace_listing_title"],
-                    "picture": item["node"]["primary_listing_photo"]["image"]["uri"],
-                    "delivery": item["node"]["delivery_types"][0],
-                    "location": item["node"]["location"]["reverse_geocode"]["city_page"]["display_name"],
-                    "category_id":item["node"]["marketplace_listing_category_id"]
-                }
+            seller_items.append({
+                "item_id": str(item["node"]["id"]),
+                "price": item["node"]["listing_price"]["formatted_amount"],
+                "status": str(item["node"]["is_pending"]),
+                "islive": (item["node"]["is_live"]),
+                "category": item["node"]["marketplace_listing_category_id"],
+                "name": item["node"]["marketplace_listing_title"],
+                "picture": item["node"]["primary_listing_photo"]["image"]["uri"],
+                "delivery": item["node"]["delivery_types"][0],
+                "location": item["node"]["location"]["reverse_geocode"]["city_page"]["display_name"],
+                "category_id":item["node"]["marketplace_listing_category_id"]
             })
 
             if item["node"]["origin_group"] != None:
-                seller_informations.append({
-                    "seller_group":{
-                        "name":item["node"]["origin_group"]["name"],
-                        "id":item["node"]["origin_group"]["id"]
-                        }
-                    })
-    return seller_informations
+                seller_groups.append({
+                    "name":item["node"]["origin_group"]["name"],
+                    "id":item["node"]["origin_group"]["id"]
+                })
+    return (seller_informations, seller_items, seller_groups)
 
-def location_and_delivery_type(seller_informations):
-    """ Extract the location and the delivery type from each item sell profile and check if its already exists."""
+
+def location_and_delivery_type(seller_informations, seller_items):
     if seller_informations[0]["nbr_total_item"] != 0:
-        i = 1
+        i = 0
         locations = list()
         deliveries = list()
-        while (i < len(seller_informations)):
-            location  = seller_informations[i]["seller_items"]["location"]
-            delivery = seller_informations[i]["seller_items"]["delivery"]
-            if location not in locations:
-                locations.append(location)
-            if delivery not in deliveries:
-                deliveries.append(delivery)
+        while (i < len(seller_items)):
+            if seller_items[i]["location"] != None:
+                location = seller_items[i]["location"]
+                if location not in locations:
+                    locations.append(location)
+            if seller_items[i]["delivery"]:
+                delivery = seller_items[i]["delivery"]
+                if delivery not in deliveries:
+                    deliveries.append(delivery)
+
             i +=1
         seller_informations[0]["delivery"]= deliveries
         seller_informations[0]["location"]= location
@@ -64,14 +60,13 @@ def location_and_delivery_type(seller_informations):
     return seller_informations
 
 
-def show_seller_informations(seller_informations):
-    """ Print the seller informations. """"
+def show_seller_informations(seller_informations, seller_items):
     print(f"""
 Seller Name : {seller_informations[0]['sellername']},
 Seller ID : {seller_informations[0]['sellerid']},
 Total items : {seller_informations[0]['nbr_total_item']}
     """)
-    location_and_delivery_type(seller_informations)
+    location_and_delivery_type(seller_informations, seller_items)
 
     if seller_informations[0]['location'] != None:
         print(f"Location(s) {seller_informations[0]['location']}")
@@ -88,13 +83,14 @@ Total items : {seller_informations[0]['nbr_total_item']}
             for attribute in seller_informations[0]['rating']['seller_stats']['bad_attributes_counts']:
                 print(f"{attribute['title']['text']} : {attribute['count']}")
 
-def show_item_informations(seller_informations):
-    """ Print the item informations and the url of the marketplace item. """
-    i = 1
-    while (i < len(seller_informations)):
+
+def show_item_informations(seller_items):
+    """ Print the informations of each first item. Max 8"""
+    i = 0
+    while (i < len(seller_items)):
         print(f"""
-Name : {seller_informations[i]['seller_items']['name']} && Price : {seller_informations[i]['seller_items']['price']},
-Item ID : {seller_informations[i]['seller_items']['item_id']} && URL : https://www.facebook.com/markteplace/item{seller_informations[i]['seller_items']['item_id']}""")
+Name : {seller_items[i]['name']} && Price : {seller_items[i]['price']},
+Item ID : {seller_items[i]['item_id']} && URL : https://www.facebook.com/markteplace/item{seller_items[i]['item_id']}""")
         #Delivery: {seller_informations[i]['seller_items']['delivery']}
         #Picture: {seller_informations[i]['seller_items']['picture']},
 
@@ -102,9 +98,21 @@ Item ID : {seller_informations[i]['seller_items']['item_id']} && URL : https://w
         i+=1
 
 
+def show_group(seller_groups):
+    i = 0
+    groups = list()
+    while (i < len(seller_groups)):
+        if seller_groups[i] not in groups:
+            groups.append(seller_groups[i])
+        i += 1
+    print("Public Group's member :")
+    for group in groups:
+        print(f"Name : {group['name']} && Group ID : {group['id']}")
+
 def main():
 
     user_id = str(input("entrez userid : "))
+
 
     headers = {
         'User-Agent': random.choice(ua["browsers"]["chrome"]),
@@ -134,11 +142,12 @@ def main():
 
     seller_items = list()
     x = 0
-    seller_informations = dict()
+    seller_informations = list()
+    seller_groups = list()
 
-    seller_informations = general_informations(data, seller_items, seller_informations)
-    seller_informations, has_next_page, end_page = new_page(data, seller_informations)
-    show_seller_informations(seller_informations)
-    show_item_informations(seller_informations)
+    seller_informations, seller_items, seller_groups = general_informations(data, seller_items, seller_informations, seller_groups)
+    show_seller_informations(seller_informations, seller_items)
+    show_group(seller_groups)
+    show_item_informations(seller_items)
 
 main()
