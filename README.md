@@ -7,7 +7,7 @@ Put the Facebook Id of the profile to find the seller informations of the person
 
 # Installation
 
-git clone 
+git clone https://github.com/Eriys/SellerFB.git
 
 pip install requirements.txt
 
